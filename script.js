@@ -1,70 +1,171 @@
-/* =========================================================
-   GLOBAL
-========================================================= */
-
-const screens = {
-    home: document.getElementById("homeScreen"),
-    cricketSelect: document.getElementById("cricketSelectScreen"),
-    cricketGame: document.getElementById("cricketGameScreen"),
-    pen: document.getElementById("penScreen")
+let totalScores = JSON.parse(localStorage.getItem("gameHubScores")) || {
+    p1: 0,
+    p2: 0,
+    computer: 0
 };
 
-let leaderboard = {
-    p1Cricket: 0,
-    p2Cricket: 0,
-    cpuCricket: 0,
-    p1Pen: 0,
-    p2Pen: 0,
-    cpuPen: 0
-};
+function updateLeaderboard() {
+    document.getElementById("p1Total").textContent = totalScores.p1;
+    document.getElementById("p2Total").textContent = totalScores.p2;
+    document.getElementById("computerTotal").textContent = totalScores.computer;
 
-function showScreen(screen) {
-    Object.values(screens).forEach(s => s.classList.remove("active"));
-    screen.classList.add("active");
+    localStorage.setItem(
+        "gameHubScores",
+        JSON.stringify(totalScores)
+    );
 }
 
-function goHome() {
-    stopPenAnimation();
-    document.getElementById("cricketResultOverlay").classList.remove("show");
-    document.getElementById("penResultOverlay").classList.remove("show");
-    showScreen(screens.home);
+function resetAllScores() {
+    totalScores = {
+        p1: 0,
+        p2: 0,
+        computer: 0
+    };
+
     updateLeaderboard();
 }
 
-function updateLeaderboard() {
-
-    document.getElementById("lbP1Cricket").textContent =
-        leaderboard.p1Cricket;
-
-    document.getElementById("lbP2Cricket").textContent =
-        leaderboard.p2Cricket;
-
-    document.getElementById("lbCpuCricket").textContent =
-        leaderboard.cpuCricket;
-
-    document.getElementById("lbP1Pen").textContent =
-        leaderboard.p1Pen;
-
-    document.getElementById("lbP2Pen").textContent =
-        leaderboard.p2Pen;
-
-    document.getElementById("lbCpuPen").textContent =
-        leaderboard.cpuPen;
-
-    document.getElementById("lbP1Total").textContent =
-        leaderboard.p1Cricket + leaderboard.p1Pen;
-
-    document.getElementById("lbP2Total").textContent =
-        leaderboard.p2Cricket + leaderboard.p2Pen;
-
-    document.getElementById("lbCpuTotal").textContent =
-        leaderboard.cpuCricket + leaderboard.cpuPen;
+function hidePages() {
+    document.querySelectorAll(".page").forEach(page => {
+        page.classList.remove("active");
+    });
 }
 
+function openGame(game) {
+    hidePages();
 
-/* =========================================================
-   BOOK CRICKET
-========================================================= */
+    if (game === "pen") {
+        document.getElementById("penPage").classList.add("active");
+    }
+
+    if (game === "cricket") {
+        document.getElementById("cricketPage").classList.add("active");
+    }
+
+    if (game === "dots") {
+        document.getElementById("dotsPage").classList.add("active");
+    }
+}
+
+function goHome() {
+    hidePages();
+    document.getElementById("homePage").classList.add("active");
+}
+
+/* ================= PEN FIGHTING ================= */
+
+let penMode = "pvp";
+let penScore1 = 0;
+let penScore2 = 0;
+let draggingPen = false;
+
+function startPen(mode) {
+    penMode = mode;
+
+    document.getElementById("penGame").classList.remove("hidden");
+
+    resetPen();
+}
+
+function resetPen() {
+    penScore1 = 0;
+    penScore2 = 0;
+
+    document.getElementById("penP1").textContent = 0;
+    document.getElementById("penP2").textContent = 0;
+
+    document.getElementById("penMessage").textContent =
+        "Drag your pen, aim and release!";
+}
+
+const pen1 = document.getElementById("pen1");
+
+pen1.addEventListener("pointerdown", function () {
+    draggingPen = true;
+    pen1.setPointerCapture(event.pointerId);
+});
+
+pen1.addEventListener("pointermove", function (event) {
+
+    if (!draggingPen) return;
+
+    const table = document.getElementById("penTable");
+    const rect = table.getBoundingClientRect();
+
+    let x = event.clientX - rect.left;
+    let y = event.clientY - rect.top;
+
+    pen1.style.left = x + "px";
+    pen1.style.top = y + "px";
+});
+
+pen1.addEventListener("pointerup", function () {
+
+    draggingPen = false;
+
+    const rect = document
+        .querySelector(".hole2")
+        .getBoundingClientRect();
+
+    const penRect = pen1.getBoundingClientRect();
+
+    const distance = Math.hypot(
+        penRect.left - rect.left,
+        penRect.top - rect.top
+    );
+
+    if (distance < 100) {
+
+        penScore1++;
+
+        document.getElementById("penP1").textContent =
+            penScore1;
+
+        totalScores.p1++;
+        updateLeaderboard();
+
+        document.getElementById("penMessage").textContent =
+            "🎯 Player 1 scored!";
+    } else {
+
+        document.getElementById("penMessage").textContent =
+            "Missed! Try again.";
+    }
+
+    if (penMode === "pvc") {
+        setTimeout(computerPenMove, 700);
+    }
+});
+
+function computerPenMove() {
+
+    penScore2++;
+
+    document.getElementById("penP2").textContent =
+        penScore2;
+
+    totalScores.computer++;
+    updateLeaderboard();
+
+    document.getElementById("penMessage").textContent =
+        "🤖 Computer scored!";
+}
+
+/* ================= BOOK CRICKET ================= */
+
+let cricketMode = "pvp";
+
+let cricketData = {
+    p1: {
+        score: 0,
+        ball: 0
+    },
+
+    p2: {
+        score: 0,
+        ball: 0
+    }
+};
 
 const cricketers = [
     "Virat Kohli",
@@ -72,1929 +173,549 @@ const cricketers = [
     "MS Dhoni",
     "Jasprit Bumrah",
     "Hardik Pandya",
-    "KL Rahul",
     "Ravindra Jadeja",
     "Shubman Gill",
+    "KL Rahul",
     "Rishabh Pant",
     "Suryakumar Yadav"
 ];
 
-let cricket = {
-    mode: "pvp",
+function startCricket(mode) {
 
-    selected: [],
+    cricketMode = mode;
 
-    teams: {
-        p1: [],
-        p2: []
-    },
+    document
+        .getElementById("cricketGame")
+        .classList.remove("hidden");
 
-    score: [0, 0],
-    balls: [0, 0],
-    out: [false, false],
+    resetCricket();
 
-    currentInnings: 0,
-
-    pageBusy: false,
-    matchOver: false
-};
-
-
-function openCricket(mode) {
-
-    cricket.mode = mode;
-
-    resetCricketState();
-
-    renderPlayerSelection();
-
-    showScreen(screens.cricketSelect);
+    document.getElementById("cricketMessage").textContent =
+        "Choose your batter and click the book!";
 }
 
+function resetCricket() {
 
-function resetCricketState() {
+    cricketData = {
+        p1: {
+            score: 0,
+            ball: 0
+        },
 
-    cricket.selected = [];
-
-    cricket.teams = {
-        p1: [],
-        p2: []
+        p2: {
+            score: 0,
+            ball: 0
+        }
     };
 
-    cricket.score = [0, 0];
-    cricket.balls = [0, 0];
-    cricket.out = [false, false];
-
-    cricket.currentInnings = 0;
-    cricket.pageBusy = false;
-    cricket.matchOver = false;
-
-    document.getElementById("cricketResultOverlay")
-        .classList.remove("show");
+    document.getElementById("cricketP1Score").textContent = 0;
+    document.getElementById("cricketP2Score").textContent = 0;
+    document.getElementById("ballCount").textContent = "Ball: 0 / 6";
+    document.getElementById("currentBatter").textContent =
+        "Batter: Player 1";
 }
 
+function bookFlip() {
 
-function renderPlayerSelection() {
+    let left = Math.floor(Math.random() * 100) + 1;
+    let right = Math.floor(Math.random() * 100) + 1;
 
-    const grid = document.getElementById("playerSelectionGrid");
+    document.getElementById("leftNumber").textContent = left;
+    document.getElementById("rightNumber").textContent = right;
 
-    grid.innerHTML = "";
+    let number = right % 10;
 
-    cricketers.forEach((name, index) => {
+    if (number === 8) {
 
-        const card = document.createElement("button");
+        document.getElementById("cricketMessage").textContent =
+            "OUT! Next batter.";
 
-        card.className = "player-choice";
-
-        card.innerHTML = `
-            <div class="player-avatar">🏏</div>
-            <h3>${name}</h3>
-            <span>Player ${index + 1}</span>
-        `;
-
-        card.onclick = () => toggleCricketer(index, card);
-
-        grid.appendChild(card);
-    });
-
-    updateSelectionUI();
-}
-
-
-function toggleCricketer(index, card) {
-
-    const name = cricketers[index];
-
-    if (cricket.selected.includes(name)) {
-
-        cricket.selected =
-            cricket.selected.filter(p => p !== name);
-
-        card.classList.remove("selected");
+        cricketData.p1.ball++;
 
     } else {
 
-        if (cricket.selected.length >= 3) {
-            return;
+        cricketData.p1.score += number;
+        cricketData.p1.ball++;
+
+        document.getElementById("cricketP1Score").textContent =
+            cricketData.p1.score;
+    }
+
+    document.getElementById("ballCount").textContent =
+        "Ball: " + cricketData.p1.ball + " / 6";
+
+    if (cricketData.p1.ball >= 6) {
+
+        document.getElementById("cricketMessage").textContent =
+            "Player 1 batting finished!";
+
+        if (cricketMode === "pvc") {
+            setTimeout(computerCricketTurn, 700);
         }
-
-        cricket.selected.push(name);
-
-        card.classList.add("selected");
     }
 
-    updateSelectionUI();
-}
-
-
-function updateSelectionUI() {
-
-    const count = cricket.selected.length;
-
-    document.getElementById("selectedCount").textContent = count;
-
-    const button = document.getElementById("startCricketBtn");
-
-    button.disabled = count !== 3;
-
-    if (count === 3) {
-        button.textContent = "START MATCH";
-    } else {
-        button.textContent = `SELECT ${3 - count} MORE`;
-    }
-}
-
-
-function startCricketMatch() {
-
-    if (cricket.selected.length !== 3) {
-        return;
-    }
-
-    cricket.teams.p1 = [...cricket.selected];
-
-    const remaining = cricketers.filter(
-        p => !cricket.selected.includes(p)
-    );
-
-    cricket.teams.p2 =
-        shuffleArray(remaining).slice(0, 3);
-
-    cricket.score = [0, 0];
-    cricket.balls = [0, 0];
-    cricket.out = [false, false];
-
-    cricket.currentInnings = 0;
-
-    document.getElementById("teamTwoName").textContent =
-        cricket.mode === "pvc" ? "COMPUTER" : "PLAYER 2";
-
-    resetBookDisplay();
-
-    showScreen(screens.cricketGame);
-
-    updateCricketUI();
-}
-
-
-function shuffleArray(array) {
-
-    const arr = [...array];
-
-    for (let i = arr.length - 1; i > 0; i--) {
-
-        const j = Math.floor(Math.random() * (i + 1));
-
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-
-    return arr;
-}
-
-
-/* ================= BOOK MECHANICS ================= */
-
-function playBookBall() {
-
-    if (cricket.pageBusy || cricket.matchOver) {
-        return;
-    }
-
-    cricket.pageBusy = true;
-
-    const button = document.getElementById("openPageBtn");
-
-    button.disabled = true;
-
-    document.getElementById("bookStatus").textContent =
-        "Opening page...";
-
-    const book = document.querySelector(".book");
-
-    book.classList.add("book-opening");
-
-    setTimeout(() => {
-
-        const pageNumber =
-            Math.floor(Math.random() * 900) + 100;
-
-        const lastDigit = pageNumber % 10;
-
-        document.getElementById("pageNumber").textContent =
-            pageNumber;
-
-        let resultText;
-
-        if (lastDigit === 8) {
-
-            resultText = "OUT!";
-
-            document.getElementById("runsResult").innerHTML =
-                `<span style="color:#ff5c6c">💥 OUT!</span>`;
-
-            cricket.out[cricket.currentInnings] = true;
-
-        } else {
-
-            cricket.score[cricket.currentInnings] += lastDigit;
-
-            resultText =
-                lastDigit === 0
-                    ? "DOT BALL"
-                    : `+${lastDigit} RUN${lastDigit === 1 ? "" : "S"}`;
-
-            document.getElementById("runsResult").innerHTML =
-                `<span>🏏 ${resultText}</span>`;
-        }
-
-        cricket.balls[cricket.currentInnings]++;
-
-        updateCricketUI();
-
-        setTimeout(() => {
-
-            book.classList.remove("book-opening");
-
-            finishCricketBall();
-
-        }, 900);
-
-    }, 700);
-}
-
-
-function finishCricketBall() {
-
-    const innings = cricket.currentInnings;
-
-    /*
-       IMPORTANT:
-       OUT immediately ends the current innings.
-       Otherwise the innings continues until 6 balls.
-    */
-
-    if (cricket.out[innings]) {
-
-        setTimeout(() => {
-            moveToNextInnings();
-        }, 900);
-
-        return;
-    }
-
-    /*
-       Six balls complete = innings over.
-    */
-
-    if (cricket.balls[innings] >= 6) {
-
-        setTimeout(() => {
-            moveToNextInnings();
-        }, 900);
-
-        return;
-    }
-
-    cricket.pageBusy = false;
-
-    document.getElementById("openPageBtn").disabled = false;
-
-    document.getElementById("bookStatus").textContent =
-        "Ready for next ball";
-}
-
-
-function moveToNextInnings() {
-
-    if (cricket.currentInnings === 0) {
-
-        cricket.currentInnings = 1;
-
-        cricket.pageBusy = false;
-
-        resetBookDisplay();
-
-        document.getElementById("openPageBtn").disabled = false;
-
-        document.getElementById("bookStatus").textContent =
-            "Player 2 is batting!";
-
-        updateCricketUI();
-
-        return;
-    }
-
-    finishCricketMatch();
-}
-
-
-function resetBookDisplay() {
-
-    document.getElementById("pageNumber").textContent = "?";
-
-    document.getElementById("runsResult").innerHTML =
-        "<span>PRESS OPEN PAGE</span>";
-
-    document.getElementById("currentBall").textContent =
-        cricket.balls[cricket.currentInnings] + 1;
-
-    document.getElementById("bookStatus").textContent =
-        cricket.currentInnings === 0
-            ? "Player 1 is batting"
-            : "Player 2 is batting";
-}
-
-
-function updateCricketUI() {
-
-    document.getElementById("scoreOne").textContent =
-        cricket.score[0];
-
-    document.getElementById("scoreTwo").textContent =
-        cricket.score[1];
-
-    document.getElementById("ballsOne").textContent =
-        `${cricket.balls[0]} / 6 balls`;
-
-    document.getElementById("ballsTwo").textContent =
-        `${cricket.balls[1]} / 6 balls`;
-
-    document.getElementById("wicketOne").textContent =
-        cricket.out[0] ? "OUT" : "NOT OUT";
-
-    document.getElementById("wicketTwo").textContent =
-        cricket.out[1] ? "OUT" : "NOT OUT";
-
-    document.getElementById("teamOneCard")
-        .classList.toggle(
-            "active-team",
-            cricket.currentInnings === 0
-        );
-
-    document.getElementById("teamTwoCard")
-        .classList.toggle(
-            "active-team",
-            cricket.currentInnings === 1
-        );
-
-    document.getElementById("cricketInningsTitle").textContent =
-        cricket.currentInnings === 0
-            ? "Player 1 Batting"
-            : cricket.mode === "pvc"
-                ? "Computer Batting"
-                : "Player 2 Batting";
-
-    document.getElementById("currentBall").textContent =
-        Math.min(
-            cricket.balls[cricket.currentInnings] + 1,
-            6
-        );
-}
-
-
-function finishCricketMatch() {
-
-    cricket.matchOver = true;
-
-    const score1 = cricket.score[0];
-    const score2 = cricket.score[1];
-
-    let winner;
-
-    if (score1 > score2) {
-
-        winner = "PLAYER 1";
-
-        leaderboard.p1Cricket++;
-
-    } else if (score2 > score1) {
-
-        winner =
-            cricket.mode === "pvc"
-                ? "COMPUTER"
-                : "PLAYER 2";
-
-        if (cricket.mode === "pvc") {
-            leaderboard.cpuCricket++;
-        } else {
-            leaderboard.p2Cricket++;
-        }
-
-    } else {
-
-        winner = "MATCH DRAW";
-    }
-
-    document.getElementById("finalScoreOne").textContent =
-        score1;
-
-    document.getElementById("finalScoreTwo").textContent =
-        score2;
-
-    document.getElementById("finalTeamTwoName").textContent =
-        cricket.mode === "pvc"
-            ? "COMPUTER"
-            : "PLAYER 2";
-
-    document.getElementById("cricketWinnerText").textContent =
-        winner === "MATCH DRAW"
-            ? "Match Draw!"
-            : `${winner} Wins!`;
-
-    document.getElementById("cricketResultDescription").textContent =
-        `Final score: ${score1} - ${score2}`;
-
-    document.getElementById("cricketResultOverlay")
-        .classList.add("show");
-
+    totalScores.p1 = cricketData.p1.score;
     updateLeaderboard();
 }
 
+function computerCricketTurn() {
 
-function restartCricket() {
+    let score = 0;
 
-    document.getElementById("cricketResultOverlay")
-        .classList.remove("show");
+    for (let i = 0; i < 6; i++) {
 
-    openCricket(cricket.mode);
+        let n = Math.floor(Math.random() * 10);
+
+        if (n !== 8) {
+            score += n;
+        }
+    }
+
+    cricketData.p2.score = score;
+
+    document.getElementById("cricketP2Score").textContent =
+        score;
+
+    totalScores.computer = score;
+
+    updateLeaderboard();
+
+    document.getElementById("cricketMessage").textContent =
+        "🤖 Computer finished batting!";
 }
 
+/* ================= DOTS & BLOCKS ================= */
 
-/* =========================================================
-   PEN FIGHT
-========================================================= */
+const ROWS = 7;
+const COLS = 8;
 
-const penCanvas =
-    document.getElementById("penCanvas");
+let dotsMode = "pvp";
+let currentPlayer = 1;
 
-const ctx = penCanvas.getContext("2d");
+let horizontalLines = [];
+let verticalLines = [];
+let boxes = [];
 
-const WORLD = {
-    width: 900,
-    height: 500
+let dotsScore = {
+    p1: 0,
+    p2: 0
 };
 
-const penHoles = {
-    left: {
-        x: 34,
-        y: WORLD.height / 2,
-        radius: 34
-    },
+function startDots(mode) {
 
-    right: {
-        x: WORLD.width - 34,
-        y: WORLD.height / 2,
-        radius: 34
-    }
-};
+    dotsMode = mode;
 
-let pen = {
+    document
+        .getElementById("dotsGame")
+        .classList.remove("hidden");
 
-    mode: "pvp",
-
-    turn: 0,
-
-    scores: [0, 0],
-
-    hp: [3, 3],
-
-    matchOver: false,
-
-    roundOver: false,
-
-    moving: false,
-
-    dragging: false,
-
-    dragStart: null,
-
-    dragCurrent: null,
-
-    animationId: null,
-
-    p1: {
-        x: 250,
-        y: 250,
-        vx: 0,
-        vy: 0,
-        radius: 18,
-        angle: 0
-    },
-
-    p2: {
-        x: 650,
-        y: 250,
-        vx: 0,
-        vy: 0,
-        radius: 18,
-        angle: 0
-    }
-};
-
-
-function openPen(mode) {
-
-    pen.mode = mode;
-
-    restartPen();
-
-    showScreen(screens.pen);
+    resetDots();
 }
 
+function resetDots() {
 
-function setupPenCanvas() {
+    currentPlayer = 1;
 
-    const rect = penCanvas.getBoundingClientRect();
+    dotsScore = {
+        p1: 0,
+        p2: 0
+    };
 
-    const dpr = window.devicePixelRatio || 1;
+    horizontalLines = [];
+    verticalLines = [];
+    boxes = [];
 
-    penCanvas.width =
-        WORLD.width * dpr;
+    createDotsBoard();
 
-    penCanvas.height =
-        WORLD.height * dpr;
+    updateDotsScore();
 
-    ctx.setTransform(
-        dpr,
-        0,
-        0,
-        dpr,
-        0,
-        0
+    document.getElementById("dotsMessage").textContent =
+        "Connect two adjacent dots";
+}
+
+function createDotsBoard() {
+
+    const board = document.getElementById("dotsBoard");
+
+    board.innerHTML = "";
+
+    const boardWidth = board.clientWidth;
+    const boardHeight = board.clientHeight;
+
+    for (let r = 0; r < ROWS; r++) {
+
+        for (let c = 0; c < COLS; c++) {
+
+            const dot = document.createElement("div");
+
+            dot.className = "dot";
+
+            dot.style.left =
+                (c / (COLS - 1) * 100) + "%";
+
+            dot.style.top =
+                (r / (ROWS - 1) * 100) + "%";
+
+            board.appendChild(dot);
+        }
+    }
+
+    createLines();
+
+    createBoxes();
+}
+
+function createLines() {
+
+    const board = document.getElementById("dotsBoard");
+
+    const rect = board.getBoundingClientRect();
+
+    const width = rect.width;
+    const height = rect.height;
+
+    const xGap = 100 / (COLS - 1);
+    const yGap = 100 / (ROWS - 1);
+
+    horizontalLines = [];
+    verticalLines = [];
+
+    for (let r = 0; r < ROWS; r++) {
+
+        for (let c = 0; c < COLS - 1; c++) {
+
+            const line = document.createElement("div");
+
+            line.className = "line horizontal";
+
+            line.style.left =
+                (c * xGap) + "%";
+
+            line.style.top =
+                (r * yGap) + "%";
+
+            line.style.width =
+                xGap + "%";
+
+            line.dataset.type = "h";
+            line.dataset.r = r;
+            line.dataset.c = c;
+
+            line.onclick = () =>
+                playLine("h", r, c, line);
+
+            board.appendChild(line);
+
+            horizontalLines.push({
+                r,
+                c,
+                used: false,
+                element: line
+            });
+        }
+    }
+
+    for (let r = 0; r < ROWS - 1; r++) {
+
+        for (let c = 0; c < COLS; c++) {
+
+            const line = document.createElement("div");
+
+            line.className = "line vertical";
+
+            line.style.left =
+                (c * xGap) + "%";
+
+            line.style.top =
+                (r * yGap) + "%";
+
+            line.style.height =
+                yGap + "%";
+
+            line.dataset.type = "v";
+            line.dataset.r = r;
+            line.dataset.c = c;
+
+            line.onclick = () =>
+                playLine("v", r, c, line);
+
+            board.appendChild(line);
+
+            verticalLines.push({
+                r,
+                c,
+                used: false,
+                element: line
+            });
+        }
+    }
+}
+
+function createBoxes() {
+
+    boxes = [];
+
+    for (let r = 0; r < ROWS - 1; r++) {
+
+        for (let c = 0; c < COLS - 1; c++) {
+
+            boxes.push({
+                r,
+                c,
+                owner: 0
+            });
+        }
+    }
+}
+
+function getHorizontal(r, c) {
+
+    return horizontalLines.find(
+        x => x.r === r && x.c === c
     );
-
-    drawPenGame();
 }
 
+function getVertical(r, c) {
 
-window.addEventListener("resize", () => {
-
-    if (screens.pen.classList.contains("active")) {
-        setupPenCanvas();
-    }
-});
-
-
-/* ================= PEN RESTART ================= */
-
-function restartPen() {
-
-    stopPenAnimation();
-
-    pen.scores = [0, 0];
-
-    pen.hp = [3, 3];
-
-    pen.turn = 0;
-
-    pen.matchOver = false;
-
-    pen.roundOver = false;
-
-    pen.dragging = false;
-
-    pen.moving = false;
-
-    pen.p1 = {
-        x: 250,
-        y: 250,
-        vx: 0,
-        vy: 0,
-        radius: 18,
-        angle: 0
-    };
-
-    pen.p2 = {
-        x: 650,
-        y: 250,
-        vx: 0,
-        vy: 0,
-        radius: 18,
-        angle: 0
-    };
-
-    document.getElementById("penResultOverlay")
-        .classList.remove("show");
-
-    document.getElementById("penOpponentName").textContent =
-        pen.mode === "pvc"
-            ? "COMPUTER"
-            : "PLAYER 2";
-
-    document.getElementById("penOpponentLabel").textContent =
-        pen.mode === "pvc"
-            ? "CPU"
-            : "PLAYER";
-
-    updatePenHUD();
-
-    updatePenPower(0);
-
-    setTimeout(() => {
-        setupPenCanvas();
-    }, 20);
+    return verticalLines.find(
+        x => x.r === r && x.c === c
+    );
 }
 
+function boxCompleted(r, c) {
 
-function updatePenHUD() {
+    const top = getHorizontal(r, c);
+    const bottom = getHorizontal(r + 1, c);
 
-    document.getElementById("penScore1").textContent =
-        pen.scores[0];
-
-    document.getElementById("penScore2").textContent =
-        pen.scores[1];
-
-    document.getElementById("p1Hp").textContent =
-        pen.hp[0];
-
-    document.getElementById("p2Hp").textContent =
-        pen.hp[1];
-
-    document.getElementById("p1HpBar").style.width =
-        `${pen.hp[0] / 3 * 100}%`;
-
-    document.getElementById("p2HpBar").style.width =
-        `${pen.hp[1] / 3 * 100}%`;
-
-    const turnName =
-        pen.turn === 0
-            ? "PLAYER 1 TURN"
-            : pen.mode === "pvc"
-                ? "COMPUTER TURN"
-                : "PLAYER 2 TURN";
-
-    document.getElementById("penArenaStatus").textContent =
-        turnName;
-}
-
-
-/* ================= PEN POWER ================= */
-
-function updatePenPower(power) {
-
-    const maxPower = 250;
-
-    const percentage =
-        Math.min(
-            100,
-            Math.round((power / maxPower) * 100)
-        );
-
-    document.getElementById("powerFill")
-        .style.width = `${percentage}%`;
-
-    document.getElementById("powerPercent")
-        .textContent = `${percentage}%`;
-}
-
-
-/* ================= POINTER ================= */
-
-function getCanvasPoint(event) {
-
-    const rect =
-        penCanvas.getBoundingClientRect();
-
-    return {
-
-        x:
-            (event.clientX - rect.left)
-            * WORLD.width
-            / rect.width,
-
-        y:
-            (event.clientY - rect.top)
-            * WORLD.height
-            / rect.height
-    };
-}
-
-
-penCanvas.addEventListener(
-    "pointerdown",
-    e => {
-
-        if (
-            pen.matchOver ||
-            pen.moving ||
-            pen.roundOver
-        ) {
-            return;
-        }
-
-        if (
-            pen.mode === "pvc" &&
-            pen.turn === 1
-        ) {
-            return;
-        }
-
-        const point = getCanvasPoint(e);
-
-        const player =
-            pen.turn === 0
-                ? pen.p1
-                : pen.p2;
-
-        const distance =
-            Math.hypot(
-                point.x - player.x,
-                point.y - player.y
-            );
-
-        if (distance > 50) {
-            return;
-        }
-
-        pen.dragging = true;
-
-        pen.dragStart = {
-            x: player.x,
-            y: player.y
-        };
-
-        pen.dragCurrent = point;
-
-        penCanvas.setPointerCapture(e.pointerId);
-
-        updatePenPower(0);
-
-        drawPenGame();
-    }
-);
-
-
-penCanvas.addEventListener(
-    "pointermove",
-    e => {
-
-        if (!pen.dragging) {
-            return;
-        }
-
-        const point = getCanvasPoint(e);
-
-        pen.dragCurrent = point;
-
-        const player =
-            pen.turn === 0
-                ? pen.p1
-                : pen.p2;
-
-        const dx =
-            player.x - point.x;
-
-        const dy =
-            player.y - point.y;
-
-        const power =
-            Math.hypot(dx, dy);
-
-        updatePenPower(power);
-
-        drawPenGame();
-    }
-);
-
-
-penCanvas.addEventListener(
-    "pointerup",
-    e => {
-
-        if (!pen.dragging) {
-            return;
-        }
-
-        pen.dragging = false;
-
-        const player =
-            pen.turn === 0
-                ? pen.p1
-                : pen.p2;
-
-        const dx =
-            player.x - pen.dragCurrent.x;
-
-        const dy =
-            player.y - pen.dragCurrent.y;
-
-        const distance =
-            Math.hypot(dx, dy);
-
-        /*
-           IMPORTANT:
-           Minimum launch power.
-           This is the actual fix for the pen
-           not moving after release.
-        */
-
-        if (distance < 8) {
-
-            updatePenPower(0);
-
-            drawPenGame();
-
-            return;
-        }
-
-        const maxDrag = 250;
-
-        const limited =
-            Math.min(distance, maxDrag);
-
-        const power =
-            limited / maxDrag;
-
-        const directionX =
-            dx / distance;
-
-        const directionY =
-            dy / distance;
-
-        const launchSpeed =
-            4 + power * 18;
-
-        player.vx =
-            directionX * launchSpeed;
-
-        player.vy =
-            directionY * launchSpeed;
-
-        pen.moving = true;
-
-        updatePenPower(limited);
-
-        startPenAnimation();
-    }
-);
-
-
-/* =========================================================
-   PEN PHYSICS
-========================================================= */
-
-function startPenAnimation() {
-
-    stopPenAnimation();
-
-    function frame() {
-
-        if (pen.matchOver) {
-            return;
-        }
-
-        updatePenPhysics();
-
-        drawPenGame();
-
-        if (pen.moving) {
-
-            pen.animationId =
-                requestAnimationFrame(frame);
-
-        } else {
-
-            finishPenTurn();
-        }
-    }
-
-    pen.animationId =
-        requestAnimationFrame(frame);
-}
-
-
-function stopPenAnimation() {
-
-    if (pen.animationId) {
-
-        cancelAnimationFrame(
-            pen.animationId
-        );
-
-        pen.animationId = null;
-    }
-}
-
-
-function updatePenPhysics() {
-
-    const p1 = pen.p1;
-    const p2 = pen.p2;
-
-    const players = [p1, p2];
-
-    for (const player of players) {
-
-        player.x += player.vx;
-
-        player.y += player.vy;
-
-        player.angle +=
-            Math.hypot(
-                player.vx,
-                player.vy
-            ) * 0.03;
-
-
-        /*
-           HOLE DETECTION FIRST
-        */
-
-        if (penEnteredHole(player)) {
-
-            const loser =
-                player === p1 ? 0 : 1;
-
-            penOut(loser);
-
-            return;
-        }
-
-
-        /*
-           WALL COLLISION
-        */
-
-        if (
-            player.y - player.radius < 10
-        ) {
-
-            player.y =
-                10 + player.radius;
-
-            player.vy =
-                Math.abs(player.vy) * .82;
-        }
-
-        if (
-            player.y + player.radius >
-            WORLD.height - 10
-        ) {
-
-            player.y =
-                WORLD.height - 10 -
-                player.radius;
-
-            player.vy =
-                -Math.abs(player.vy) * .82;
-        }
-
-        /*
-           Left and right boundaries have
-           openings around the holes.
-        */
-
-        const nearLeftHole =
-            Math.hypot(
-                player.x - penHoles.left.x,
-                player.y - penHoles.left.y
-            ) <
-            penHoles.left.radius + 20;
-
-        const nearRightHole =
-            Math.hypot(
-                player.x - penHoles.right.x,
-                player.y - penHoles.right.y
-            ) <
-            penHoles.right.radius + 20;
-
-        if (
-            player.x - player.radius < 10 &&
-            !nearLeftHole
-        ) {
-
-            player.x =
-                10 + player.radius;
-
-            player.vx =
-                Math.abs(player.vx) * .82;
-        }
-
-        if (
-            player.x + player.radius >
-            WORLD.width - 10 &&
-            !nearRightHole
-        ) {
-
-            player.x =
-                WORLD.width - 10 -
-                player.radius;
-
-            player.vx =
-                -Math.abs(player.vx) * .82;
-        }
-    }
-
-
-    /*
-       PEN COLLISION
-    */
-
-    const dx =
-        p2.x - p1.x;
-
-    const dy =
-        p2.y - p1.y;
-
-    const distance =
-        Math.hypot(dx, dy);
-
-    const minimumDistance =
-        p1.radius + p2.radius;
-
-    if (
-        distance < minimumDistance &&
-        distance > 0
-    ) {
-
-        const nx =
-            dx / distance;
-
-        const ny =
-            dy / distance;
-
-        const relativeVelocityX =
-            p1.vx - p2.vx;
-
-        const relativeVelocityY =
-            p1.vy - p2.vy;
-
-        const velocityAlongNormal =
-            relativeVelocityX * nx +
-            relativeVelocityY * ny;
-
-        if (velocityAlongNormal > 0) {
-
-            const impulse =
-                velocityAlongNormal;
-
-            p1.vx -=
-                impulse * nx * .95;
-
-            p1.vy -=
-                impulse * ny * .95;
-
-            p2.vx +=
-                impulse * nx * .95;
-
-            p2.vy +=
-                impulse * ny * .95;
-        }
-
-        /*
-           Separate overlapping pens.
-        */
-
-        const overlap =
-            minimumDistance - distance;
-
-        p1.x -= nx * overlap / 2;
-        p1.y -= ny * overlap / 2;
-
-        p2.x += nx * overlap / 2;
-        p2.y += ny * overlap / 2;
-    }
-
-
-    /*
-       FRICTION
-    */
-
-    const friction = .965;
-
-    p1.vx *= friction;
-    p1.vy *= friction;
-
-    p2.vx *= friction;
-    p2.vy *= friction;
-
-
-    /*
-       STOP THRESHOLD
-    */
-
-    const speed1 =
-        Math.hypot(p1.vx,p1.vy);
-
-    const speed2 =
-        Math.hypot(p2.vx,p2.vy);
-
-    if (speed1 < .08) {
-
-        p1.vx = 0;
-        p1.vy = 0;
-    }
-
-    if (speed2 < .08) {
-
-        p2.vx = 0;
-        p2.vy = 0;
-    }
-
-
-    /*
-       Only current player's launch
-       determines whether turn is finished.
-    */
-
-    const current =
-        pen.turn === 0 ? p1 : p2;
-
-    if (
-        Math.hypot(
-            current.vx,
-            current.vy
-        ) < .08
-    ) {
-
-        current.vx = 0;
-        current.vy = 0;
-
-        pen.moving = false;
-    }
-}
-
-
-/* ================= HOLE ================= */
-
-function penEnteredHole(player) {
-
-    const leftDistance =
-        Math.hypot(
-            player.x - penHoles.left.x,
-            player.y - penHoles.left.y
-        );
-
-    const rightDistance =
-        Math.hypot(
-            player.x - penHoles.right.x,
-            player.y - penHoles.right.y
-        );
+    const left = getVertical(r, c);
+    const right = getVertical(r, c + 1);
 
     return (
-        leftDistance <
-        penHoles.left.radius
-        ||
-        rightDistance <
-        penHoles.right.radius
+        top.used &&
+        bottom.used &&
+        left.used &&
+        right.used
     );
 }
 
+function playLine(type, r, c, element) {
 
-function penOut(loser) {
+    let line;
 
-    if (pen.roundOver || pen.matchOver) {
-        return;
+    if (type === "h") {
+        line = getHorizontal(r, c);
+    } else {
+        line = getVertical(r, c);
     }
 
-    pen.roundOver = true;
+    if (!line || line.used) return;
 
-    const winner =
-        loser === 0 ? 1 : 0;
+    line.used = true;
 
-    pen.scores[winner]++;
+    element.classList.add(
+        currentPlayer === 1 ? "red" : "blue"
+    );
 
-    pen.hp[loser]--;
+    let scored = false;
 
-    updatePenHUD();
+    if (type === "h") {
 
-    const loserPen =
-        loser === 0 ? pen.p1 : pen.p2;
+        if (r > 0 && boxCompleted(r - 1, c)) {
 
-    if (loser === 0) {
+            claimBox(r - 1, c);
+            scored = true;
+        }
 
-        loserPen.x = penHoles.left.x;
-        loserPen.y = penHoles.left.y;
+        if (r < ROWS - 1 && boxCompleted(r, c)) {
+
+            claimBox(r, c);
+            scored = true;
+        }
 
     } else {
 
-        loserPen.x = penHoles.right.x;
-        loserPen.y = penHoles.right.y;
-    }
+        if (c > 0 && boxCompleted(r, c - 1)) {
 
-    loserPen.vx = 0;
-    loserPen.vy = 0;
+            claimBox(r, c - 1);
+            scored = true;
+        }
 
-    drawPenGame();
+        if (c < COLS - 1 && boxCompleted(r, c)) {
 
-
-    /*
-       First player to get 3 points wins.
-    */
-
-    if (pen.scores[winner] >= 3) {
-
-        setTimeout(() => {
-            finishPenMatch(winner);
-        }, 900);
-
-        return;
-    }
-
-
-    /*
-       Otherwise next round starts.
-    */
-
-    setTimeout(() => {
-
-        resetPenRound();
-
-    }, 1100);
-}
-
-
-function resetPenRound() {
-
-    pen.p1.x = 250;
-    pen.p1.y = 250;
-
-    pen.p2.x = 650;
-    pen.p2.y = 250;
-
-    pen.p1.vx = 0;
-    pen.p1.vy = 0;
-
-    pen.p2.vx = 0;
-    pen.p2.vy = 0;
-
-    pen.turn =
-        pen.turn === 0 ? 1 : 0;
-
-    pen.roundOver = false;
-
-    pen.moving = false;
-
-    updatePenPower(0);
-
-    updatePenHUD();
-
-    drawPenGame();
-
-
-    /*
-       Computer automatically takes turn.
-    */
-
-    if (
-        pen.mode === "pvc" &&
-        pen.turn === 1
-    ) {
-
-        setTimeout(() => {
-
-            computerPenMove();
-
-        }, 700);
-    }
-}
-
-
-function finishPenTurn() {
-
-    if (pen.roundOver) {
-        return;
-    }
-
-    pen.moving = false;
-
-    pen.turn =
-        pen.turn === 0 ? 1 : 0;
-
-    updatePenPower(0);
-
-    updatePenHUD();
-
-    drawPenGame();
-
-
-    if (
-        pen.mode === "pvc" &&
-        pen.turn === 1
-    ) {
-
-        setTimeout(() => {
-
-            computerPenMove();
-
-        }, 700);
-    }
-}
-
-
-/* ================= COMPUTER ================= */
-
-function computerPenMove() {
-
-    if (
-        pen.matchOver ||
-        pen.roundOver ||
-        pen.moving ||
-        pen.turn !== 1
-    ) {
-        return;
-    }
-
-    const computer = pen.p2;
-    const target = pen.p1;
-
-    /*
-       Aim towards opponent with
-       slight randomness.
-    */
-
-    const targetX =
-        target.x +
-        (Math.random() - .5) * 50;
-
-    const targetY =
-        target.y +
-        (Math.random() - .5) * 50;
-
-    const dx =
-        computer.x - targetX;
-
-    const dy =
-        computer.y - targetY;
-
-    const distance =
-        Math.hypot(dx,dy);
-
-    if (distance === 0) {
-        return;
-    }
-
-    const power =
-        .55 + Math.random() * .3;
-
-    const speed =
-        7 + power * 10;
-
-    computer.vx =
-        (dx / distance) * speed;
-
-    computer.vy =
-        (dy / distance) * speed;
-
-    pen.moving = true;
-
-    updatePenPower(power * 250);
-
-    startPenAnimation();
-}
-
-
-/* =========================================================
-   PEN DRAWING
-========================================================= */
-
-function drawPenGame() {
-
-    ctx.clearRect(
-        0,
-        0,
-        WORLD.width,
-        WORLD.height
-    );
-
-    /*
-       Background
-    */
-
-    const bg =
-        ctx.createLinearGradient(
-            0,
-            0,
-            WORLD.width,
-            WORLD.height
-        );
-
-    bg.addColorStop(0,"#0d1420");
-    bg.addColorStop(1,"#080b12");
-
-    ctx.fillStyle = bg;
-
-    ctx.fillRect(
-        0,
-        0,
-        WORLD.width,
-        WORLD.height
-    );
-
-
-    /*
-       Grid
-    */
-
-    ctx.save();
-
-    ctx.strokeStyle =
-        "rgba(80,120,180,.08)";
-
-    ctx.lineWidth = 1;
-
-    for (
-        let x = 20;
-        x < WORLD.width;
-        x += 25
-    ) {
-
-        ctx.beginPath();
-
-        ctx.moveTo(x,0);
-        ctx.lineTo(x,WORLD.height);
-
-        ctx.stroke();
-    }
-
-    for (
-        let y = 20;
-        y < WORLD.height;
-        y += 25
-    ) {
-
-        ctx.beginPath();
-
-        ctx.moveTo(0,y);
-        ctx.lineTo(WORLD.width,y);
-
-        ctx.stroke();
-    }
-
-    ctx.restore();
-
-
-    /*
-       Outer arena
-    */
-
-    ctx.save();
-
-    ctx.strokeStyle =
-        "rgba(83,154,255,.35)";
-
-    ctx.lineWidth = 3;
-
-    ctx.strokeRect(
-        10,
-        10,
-        WORLD.width - 20,
-        WORLD.height - 20
-    );
-
-    ctx.restore();
-
-
-    /*
-       Center line
-    */
-
-    ctx.save();
-
-    ctx.setLineDash([7,12]);
-
-    ctx.strokeStyle =
-        "rgba(255,255,255,.07)";
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        WORLD.width / 2,
-        20
-    );
-
-    ctx.lineTo(
-        WORLD.width / 2,
-        WORLD.height - 20
-    );
-
-    ctx.stroke();
-
-    ctx.restore();
-
-
-    /*
-       Center circle
-    */
-
-    ctx.beginPath();
-
-    ctx.arc(
-        WORLD.width / 2,
-        WORLD.height / 2,
-        55,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.strokeStyle =
-        "rgba(255,255,255,.06)";
-
-    ctx.stroke();
-
-
-    /*
-       Holes
-    */
-
-    drawPenHole(penHoles.left);
-
-    drawPenHole(penHoles.right);
-
-
-    /*
-       Aim line
-    */
-
-    if (pen.dragging) {
-
-        const player =
-            pen.turn === 0
-                ? pen.p1
-                : pen.p2;
-
-        ctx.save();
-
-        ctx.setLineDash([7,8]);
-
-        ctx.strokeStyle =
-            pen.turn === 0
-                ? "rgba(66,232,255,.75)"
-                : "rgba(255,79,154,.75)";
-
-        ctx.lineWidth = 2;
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            player.x,
-            player.y
-        );
-
-        ctx.lineTo(
-            pen.dragCurrent.x,
-            pen.dragCurrent.y
-        );
-
-        ctx.stroke();
-
-        ctx.restore();
-
-        /*
-           Aim arrow
-        */
-
-        const dx =
-            player.x - pen.dragCurrent.x;
-
-        const dy =
-            player.y - pen.dragCurrent.y;
-
-        const length =
-            Math.hypot(dx,dy);
-
-        if (length > 5) {
-
-            const ux = dx / length;
-            const uy = dy / length;
-
-            const arrowX =
-                player.x + ux * 50;
-
-            const arrowY =
-                player.y + uy * 50;
-
-            ctx.save();
-
-            ctx.fillStyle =
-                pen.turn === 0
-                    ? "#42e8ff"
-                    : "#ff4f9a";
-
-            ctx.beginPath();
-
-            ctx.arc(
-                arrowX,
-                arrowY,
-                3,
-                0,
-                Math.PI * 2
-            );
-
-            ctx.fill();
-
-            ctx.restore();
+            claimBox(r, c);
+            scored = true;
         }
     }
 
+    if (!scored) {
 
-    /*
-       Pens
-    */
+        currentPlayer =
+            currentPlayer === 1 ? 2 : 1;
+    }
 
-    drawPen(
-        pen.p1,
-        "#42e8ff",
-        "#087f99"
-    );
+    updateDotsScore();
 
-    drawPen(
-        pen.p2,
-        "#ff4f9a",
-        "#a41458"
-    );
+    checkDotsGameOver();
+
+    if (
+        dotsMode === "pvc" &&
+        currentPlayer === 2
+    ) {
+
+        setTimeout(computerDotsMove, 350);
+    }
 }
 
+function claimBox(r, c) {
 
-function drawPenHole(hole) {
-
-    /*
-       Outer glow
-    */
-
-    const glow =
-        ctx.createRadialGradient(
-            hole.x,
-            hole.y,
-            4,
-            hole.x,
-            hole.y,
-            hole.radius + 22
-        );
-
-    glow.addColorStop(
-        0,
-        "rgba(0,0,0,.95)"
+    const box = boxes.find(
+        b => b.r === r && b.c === c
     );
 
-    glow.addColorStop(
-        .55,
-        "rgba(0,0,0,.9)"
-    );
+    if (!box || box.owner !== 0) return;
 
-    glow.addColorStop(
-        1,
-        "rgba(77,141,255,0)"
-    );
+    box.owner = currentPlayer;
 
-    ctx.beginPath();
+    const board = document.getElementById("dotsBoard");
 
-    ctx.arc(
-        hole.x,
-        hole.y,
-        hole.radius + 20,
-        0,
-        Math.PI * 2
-    );
+    const div = document.createElement("div");
 
-    ctx.fillStyle = glow;
+    div.className =
+        "box " +
+        (currentPlayer === 1 ? "red" : "blue");
 
-    ctx.fill();
+    div.textContent =
+        currentPlayer === 1 ? "P1" : "P2";
 
+    const x = c / (COLS - 1) * 100;
+    const y = r / (ROWS - 1) * 100;
 
-    /*
-       Hole
-    */
+    div.style.left = x + "%";
+    div.style.top = y + "%";
 
-    const gradient =
-        ctx.createRadialGradient(
-            hole.x - 5,
-            hole.y - 5,
-            2,
-            hole.x,
-            hole.y,
-            hole.radius
-        );
+    div.style.width =
+        (100 / (COLS - 1)) + "%";
 
-    gradient.addColorStop(
-        0,
-        "#000000"
-    );
+    div.style.height =
+        (100 / (ROWS - 1)) + "%";
 
-    gradient.addColorStop(
-        .8,
-        "#020308"
-    );
+    board.appendChild(div);
 
-    gradient.addColorStop(
-        1,
-        "#141b28"
-    );
-
-    ctx.beginPath();
-
-    ctx.arc(
-        hole.x,
-        hole.y,
-        hole.radius,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fillStyle = gradient;
-
-    ctx.fill();
-
-
-    ctx.strokeStyle =
-        "rgba(255,255,255,.12)";
-
-    ctx.lineWidth = 2;
-
-    ctx.stroke();
-}
-
-
-function drawPen(player, mainColor, darkColor) {
-
-    ctx.save();
-
-    /*
-       Glow
-    */
-
-    ctx.shadowBlur = 20;
-
-    ctx.shadowColor =
-        mainColor;
-
-    /*
-       Rotate
-    */
-
-    ctx.translate(
-        player.x,
-        player.y
-    );
-
-    ctx.rotate(
-        player.angle
-    );
-
-
-    /*
-       Pen body
-    */
-
-    const width = 52;
-    const height = 15;
-
-    const x = -width / 2;
-    const y = -height / 2;
-
-    const radius = 7;
-
-    ctx.beginPath();
-
-    ctx.roundRect(
-        x,
-        y,
-        width,
-        height,
-        radius
-    );
-
-    const gradient =
-        ctx.createLinearGradient(
-            x,
-            y,
-            x + width,
-            y
-        );
-
-    gradient.addColorStop(
-        0,
-        darkColor
-    );
-
-    gradient.addColorStop(
-        .5,
-        mainColor
-    );
-
-    gradient.addColorStop(
-        1,
-        "#ffffff"
-    );
-
-    ctx.fillStyle = gradient;
-
-    ctx.fill();
-
-
-    /*
-       Pen tip
-    */
-
-    ctx.shadowBlur = 5;
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        width / 2,
-        -height / 2
-    );
-
-    ctx.lineTo(
-        width / 2 + 13,
-        0
-    );
-
-    ctx.lineTo(
-        width / 2,
-        height / 2
-    );
-
-    ctx.closePath();
-
-    ctx.fillStyle = "#e8edf5";
-
-    ctx.fill();
-
-
-    /*
-       Clip
-    */
-
-    ctx.fillStyle =
-        "rgba(255,255,255,.75)";
-
-    ctx.fillRect(
-        -2,
-        -height / 2 - 4,
-        20,
-        3
-    );
-
-    ctx.restore();
-}
-
-
-/* =========================================================
-   PEN RESULT
-========================================================= */
-
-function finishPenMatch(winner) {
-
-    pen.matchOver = true;
-
-    stopPenAnimation();
-
-    let winnerName;
-
-    if (winner === 0) {
-
-        winnerName = "PLAYER 1";
-
-        leaderboard.p1Pen++;
-
+    if (currentPlayer === 1) {
+        dotsScore.p1++;
     } else {
+        dotsScore.p2++;
+    }
+}
 
-        winnerName =
-            pen.mode === "pvc"
-                ? "COMPUTER"
-                : "PLAYER 2";
+function updateDotsScore() {
 
-        if (pen.mode === "pvc") {
-            leaderboard.cpuPen++;
-        } else {
-            leaderboard.p2Pen++;
+    document.getElementById("dotsP1").textContent =
+        dotsScore.p1;
+
+    document.getElementById("dotsP2").textContent =
+        dotsScore.p2;
+
+    document.getElementById("dotsTurn").textContent =
+        currentPlayer === 1 ? "P1" : "P2";
+}
+
+function computerDotsMove() {
+
+    const available = [
+        ...horizontalLines,
+        ...verticalLines
+    ].filter(line => !line.used);
+
+    if (available.length === 0) return;
+
+    let best = null;
+
+    for (const line of available) {
+
+        if (wouldCompleteBox(line)) {
+            best = line;
+            break;
         }
     }
 
-    document.getElementById("penResultTitle")
-        .textContent =
-        `${winnerName} WINS`;
+    if (!best) {
 
-    document.getElementById("penResultDescription")
-        .textContent =
-        "Your opponent was knocked into OUT.";
+        best =
+            available[
+                Math.floor(Math.random() * available.length)
+            ];
+    }
 
-    document.getElementById("penFinal1")
-        .textContent =
-        pen.scores[0];
+    playLine(
+        best.r !== undefined &&
+        horizontalLines.includes(best)
+            ? "h"
+            : "v",
+        best.r,
+        best.c,
+        best.element
+    );
+}
 
-    document.getElementById("penFinal2")
-        .textContent =
-        pen.scores[1];
+function wouldCompleteBox(line) {
 
-    document.getElementById("penFinalTwoName")
-        .textContent =
-        pen.mode === "pvc"
-            ? "COMPUTER"
-            : "PLAYER 2";
+    if (horizontalLines.includes(line)) {
 
-    document.getElementById("penResultOverlay")
-        .classList.add("show");
+        if (
+            line.r > 0 &&
+            boxCompleted(line.r - 1, line.c)
+        ) return true;
+
+        if (
+            line.r < ROWS - 1 &&
+            boxCompleted(line.r, line.c)
+        ) return true;
+    }
+
+    if (verticalLines.includes(line)) {
+
+        if (
+            line.c > 0 &&
+            boxCompleted(line.r, line.c - 1)
+        ) return true;
+
+        if (
+            line.c < COLS - 1 &&
+            boxCompleted(line.r, line.c)
+        ) return true;
+    }
+
+    return false;
+}
+
+function checkDotsGameOver() {
+
+    const totalBoxes =
+        (ROWS - 1) * (COLS - 1);
+
+    const captured =
+        dotsScore.p1 + dotsScore.p2;
+
+    if (captured !== totalBoxes) return;
+
+    let message;
+
+    if (dotsScore.p1 > dotsScore.p2) {
+        message = "🏆 Player 1 Wins!";
+    } else if (dotsScore.p2 > dotsScore.p1) {
+        message = "🏆 Player 2 Wins!";
+    } else {
+        message = "🤝 Draw!";
+    }
+
+    document.getElementById("dotsMessage").textContent =
+        message;
+
+    totalScores.p1 += dotsScore.p1;
+    totalScores.p2 += dotsScore.p2;
 
     updateLeaderboard();
 }
 
-
-/* =========================================================
-   STARTUP
-========================================================= */
-
 updateLeaderboard();
-
-setupPenCanvas();
