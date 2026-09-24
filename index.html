@@ -3,559 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GameHub - Book Cricket & Pen Fight</title>
+    <title>Game Hub</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- ================= HOME ================= -->
+<header>
+    <h1>🎮 GAME HUB</h1>
+    <p>Play • Compete • Win</p>
+</header>
 
-<section id="homeScreen" class="screen active">
+<main>
 
-    <header class="home-header">
-        <div>
-            <div class="logo">GAME<span>HUB</span></div>
-            <p>Play. Compete. Have Fun.</p>
-        </div>
-    </header>
-
-    <main class="home-main">
-
-        <div class="hero">
-            <span class="hero-badge">2 MINI GAMES</span>
-            <h1>Choose Your Game</h1>
-            <p>Challenge yourself, your friends or the computer.</p>
-        </div>
+    <section id="homePage" class="page active">
 
         <div class="game-grid">
 
-            <!-- BOOK CRICKET -->
-            <div class="game-card cricket-card">
-                <div class="game-icon">🏏</div>
-
-                <div class="game-card-content">
-                    <span class="game-tag">SPORTS</span>
-                    <h2>Book Cricket</h2>
-                    <p>
-                        Pick your cricket stars, open random pages
-                        and score runs. But watch out for 8 — OUT!
-                    </p>
-
-                    <div class="mode-buttons">
-                        <button onclick="openCricket('pvp')" class="primary-btn">
-                            PLAY PvP
-                        </button>
-
-                        <button onclick="openCricket('pvc')" class="secondary-btn">
-                            VS COMPUTER
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PEN FIGHT -->
-            <div class="game-card pen-card">
+            <div class="game-card" onclick="openGame('pen')">
                 <div class="game-icon">🖊️</div>
+                <h2>Pen Fighting</h2>
+                <p>Aim, drag, hold and release!</p>
+                <button>PLAY</button>
+            </div>
 
-                <div class="game-card-content">
-                    <span class="game-tag">ACTION</span>
-                    <h2>Pen Fight</h2>
-                    <p>
-                        Pull your pen back, aim and release.
-                        Knock your opponent into the hole.
-                    </p>
+            <div class="game-card" onclick="openGame('cricket')">
+                <div class="game-icon">🏏</div>
+                <h2>Book Cricket</h2>
+                <p>Choose your cricketers and bat!</p>
+                <button>PLAY</button>
+            </div>
 
-                    <div class="mode-buttons">
-                        <button onclick="openPen('pvp')" class="primary-btn">
-                            PLAY PvP
-                        </button>
-
-                        <button onclick="openPen('pvc')" class="secondary-btn">
-                            VS COMPUTER
-                        </button>
-                    </div>
-                </div>
+            <div class="game-card" onclick="openGame('dots')">
+                <div class="game-icon">🔵</div>
+                <h2>Dots & Blocks</h2>
+                <p>Connect dots and capture boxes!</p>
+                <button>PLAY</button>
             </div>
 
         </div>
 
-        <!-- LEADERBOARD -->
-        <section class="leaderboard-home">
-            <div class="section-heading">
-                <div>
-                    <span class="small-label">SESSION STATS</span>
-                    <h2>Leaderboard</h2>
-                </div>
+        <div class="leaderboard">
+            <h2>🏆 COMMON LEADERBOARD</h2>
 
-                <span class="reset-note">
-                    Resets on refresh
-                </span>
+            <div class="score-row">
+                <span>🔴 Player 1</span>
+                <strong id="p1Total">0</strong>
             </div>
 
-            <div class="leaderboard-table">
-                <div class="leader-row leader-head">
-                    <span>PLAYER</span>
-                    <span>BOOK CRICKET</span>
-                    <span>PEN FIGHT</span>
-                    <span>TOTAL</span>
+            <div class="score-row">
+                <span>🔵 Player 2</span>
+                <strong id="p2Total">0</strong>
+            </div>
+
+            <div class="score-row">
+                <span>🤖 Computer</span>
+                <strong id="computerTotal">0</strong>
+            </div>
+
+            <button onclick="resetAllScores()" class="reset-btn">
+                Reset Scores
+            </button>
+        </div>
+
+    </section>
+
+    <!-- PEN FIGHTING -->
+
+    <section id="penPage" class="page">
+
+        <button class="back-btn" onclick="goHome()">← Home</button>
+
+        <h2>🖊️ Pen Fighting</h2>
+
+        <div class="mode-buttons">
+            <button onclick="startPen('pvp')">PvP</button>
+            <button onclick="startPen('pvc')">PvC</button>
+        </div>
+
+        <div id="penGame" class="game-area hidden">
+
+            <div class="mini-score">
+                <span>P1: <b id="penP1">0</b></span>
+                <span>P2: <b id="penP2">0</b></span>
+            </div>
+
+            <div id="penTable">
+
+                <div class="hole hole1"></div>
+                <div class="hole hole2"></div>
+
+                <div id="pen1" class="pen"></div>
+                <div id="pen2" class="pen enemy"></div>
+
+            </div>
+
+            <p id="penMessage">Drag your pen, aim and release!</p>
+
+            <button onclick="resetPen()">Restart</button>
+
+        </div>
+
+    </section>
+
+    <!-- BOOK CRICKET -->
+
+    <section id="cricketPage" class="page">
+
+        <button class="back-btn" onclick="goHome()">← Home</button>
+
+        <h2>🏏 Book Cricket</h2>
+
+        <div class="mode-buttons">
+            <button onclick="startCricket('pvp')">PvP</button>
+            <button onclick="startCricket('pvc')">PvC</button>
+        </div>
+
+        <div id="cricketGame" class="game-area hidden">
+
+            <div class="cricket-score">
+
+                <div>
+                    <h3>Player 1</h3>
+                    <strong id="cricketP1Score">0</strong>
                 </div>
 
-                <div class="leader-row">
+                <div>
+                    <h3>Player 2</h3>
+                    <strong id="cricketP2Score">0</strong>
+                </div>
+
+            </div>
+
+            <div class="book" onclick="bookFlip()">
+                <div class="page-left">
+                    <span id="leftNumber">12</span>
+                </div>
+
+                <div class="page-right">
+                    <span id="rightNumber">34</span>
+                </div>
+            </div>
+
+            <p id="cricketMessage">
+                Click the book to play
+            </p>
+
+            <div class="selected-player">
+                <span id="currentBatter">Batter: Player 1</span>
+                <span id="ballCount">Ball: 0 / 6</span>
+            </div>
+
+            <button onclick="resetCricket()">Restart</button>
+
+        </div>
+
+    </section>
+
+    <!-- DOTS AND BLOCKS -->
+
+    <section id="dotsPage" class="page">
+
+        <button class="back-btn" onclick="goHome()">← Home</button>
+
+        <h2>🔵 Dots & Blocks</h2>
+
+        <div class="mode-buttons">
+            <button onclick="startDots('pvp')">PvP</button>
+            <button onclick="startDots('pvc')">PvC</button>
+        </div>
+
+        <div id="dotsGame" class="game-area hidden">
+
+            <div class="dots-scoreboard">
+
+                <div class="player-box red-box">
                     <span>Player 1</span>
-                    <strong id="lbP1Cricket">0</strong>
-                    <strong id="lbP1Pen">0</strong>
-                    <strong id="lbP1Total">0</strong>
+                    <strong id="dotsP1">0</strong>
                 </div>
 
-                <div class="leader-row">
+                <div class="turn-box">
+                    <span>Turn</span>
+                    <strong id="dotsTurn">P1</strong>
+                </div>
+
+                <div class="player-box blue-box">
                     <span>Player 2</span>
-                    <strong id="lbP2Cricket">0</strong>
-                    <strong id="lbP2Pen">0</strong>
-                    <strong id="lbP2Total">0</strong>
-                </div>
-
-                <div class="leader-row">
-                    <span>Computer</span>
-                    <strong id="lbCpuCricket">0</strong>
-                    <strong id="lbCpuPen">0</strong>
-                    <strong id="lbCpuTotal">0</strong>
-                </div>
-            </div>
-        </section>
-
-    </main>
-</section>
-
-
-<!-- ================= CRICKET SELECTION ================= -->
-
-<section id="cricketSelectScreen" class="screen">
-
-    <div class="cricket-topbar">
-        <button class="back-btn" onclick="goHome()">←</button>
-
-        <div>
-            <span class="small-label">BOOK CRICKET</span>
-            <h2>Select Your Team</h2>
-        </div>
-    </div>
-
-    <main class="cricket-select-main">
-
-        <div class="select-intro">
-            <div class="cricket-ball">🏏</div>
-            <h1>Build Your XI</h1>
-            <p>Select exactly <strong>3 cricketers</strong> to play.</p>
-
-            <div class="selection-counter">
-                <span id="selectedCount">0</span> / 3 selected
-            </div>
-        </div>
-
-        <div id="playerSelectionGrid" class="player-selection-grid"></div>
-
-        <button
-            id="startCricketBtn"
-            class="big-start-btn"
-            disabled
-            onclick="startCricketMatch()"
-        >
-            SELECT 3 PLAYERS
-        </button>
-
-    </main>
-</section>
-
-
-<!-- ================= CRICKET GAME ================= -->
-
-<section id="cricketGameScreen" class="screen">
-
-    <header class="cricket-game-header">
-
-        <button class="back-btn" onclick="goHome()">←</button>
-
-        <div class="cricket-score-title">
-            <span class="small-label">BOOK CRICKET</span>
-            <h2 id="cricketInningsTitle">Player 1 Batting</h2>
-        </div>
-
-        <button class="restart-small" onclick="restartCricket()">
-            ↻
-        </button>
-
-    </header>
-
-    <main class="cricket-game-main">
-
-        <!-- SCOREBOARD -->
-        <section class="cricket-scoreboard">
-
-            <div class="score-team active-team" id="teamOneCard">
-                <div>
-                    <span>PLAYER 1</span>
-                    <h2 id="scoreOne">0</h2>
-                </div>
-
-                <div class="team-meta">
-                    <span id="ballsOne">0 / 6 balls</span>
-                    <span id="wicketOne">0 OUT</span>
-                </div>
-            </div>
-
-            <div class="score-vs">VS</div>
-
-            <div class="score-team" id="teamTwoCard">
-                <div>
-                    <span id="teamTwoName">PLAYER 2</span>
-                    <h2 id="scoreTwo">0</h2>
-                </div>
-
-                <div class="team-meta">
-                    <span id="ballsTwo">0 / 6 balls</span>
-                    <span id="wicketTwo">0 OUT</span>
-                </div>
-            </div>
-
-        </section>
-
-
-        <!-- BOOK -->
-        <section class="book-area">
-
-            <div class="book-status">
-                <span class="status-dot green"></span>
-                <span id="bookStatus">Ready to bat</span>
-            </div>
-
-            <div class="book-stage">
-
-                <button id="pageLeft" class="page-button">
-                    ‹
-                </button>
-
-                <div class="book">
-                    <div class="book-cover"></div>
-
-                    <div class="book-page">
-                        <span class="page-label">PAGE</span>
-                        <strong id="pageNumber">?</strong>
-
-                        <div class="page-lines">
-                            <i></i>
-                            <i></i>
-                            <i></i>
-                            <i></i>
-                        </div>
-                    </div>
-                </div>
-
-                <button id="pageRight" class="page-button">
-                    ›
-                </button>
-
-            </div>
-
-            <div class="runs-result" id="runsResult">
-                <span>PRESS OPEN PAGE</span>
-            </div>
-
-            <button
-                id="openPageBtn"
-                class="open-page-btn"
-                onclick="playBookBall()"
-            >
-                OPEN PAGE
-            </button>
-
-            <div class="ball-info">
-                Ball <strong id="currentBall">1</strong> of 6
-            </div>
-
-        </section>
-
-    </main>
-</section>
-
-
-<!-- ================= CRICKET RESULT ================= -->
-
-<div id="cricketResultOverlay" class="game-overlay">
-
-    <div class="result-modal cricket-result-modal">
-
-        <div class="result-emoji" id="cricketResultEmoji">
-            🏆
-        </div>
-
-        <span class="small-label">MATCH COMPLETE</span>
-
-        <h1 id="cricketWinnerText">Player 1 Wins!</h1>
-
-        <p id="cricketResultDescription">
-            Great game!
-        </p>
-
-        <div class="final-score">
-            <div>
-                <span>PLAYER 1</span>
-                <strong id="finalScoreOne">0</strong>
-            </div>
-
-            <div class="final-vs">—</div>
-
-            <div>
-                <span id="finalTeamTwoName">PLAYER 2</span>
-                <strong id="finalScoreTwo">0</strong>
-            </div>
-        </div>
-
-        <div class="result-buttons">
-            <button class="primary-btn" onclick="restartCricket()">
-                PLAY AGAIN
-            </button>
-
-            <button class="secondary-btn" onclick="goHome()">
-                HOME
-            </button>
-        </div>
-
-    </div>
-</div>
-
-
-<!-- ================= PEN FIGHT ================= -->
-
-<section id="penScreen" class="screen pen-screen">
-
-    <div class="pen-topbar">
-
-        <button class="pen-icon-btn" onclick="goHome()">
-            ←
-        </button>
-
-        <div class="pen-brand">
-            <div class="pen-brand-icon">✦</div>
-
-            <div>
-                <h1>PEN FIGHT</h1>
-                <span>Physics • Skill • Strategy</span>
-            </div>
-        </div>
-
-        <button class="pen-icon-btn" onclick="restartPen()">
-            ↻
-        </button>
-
-    </div>
-
-
-    <main class="pen-main">
-
-        <!-- HUD -->
-        <div class="pen-hud">
-
-            <div class="pen-player-card player-one-card">
-
-                <div class="player-card-top">
-                    <span class="player-number">01</span>
-
-                    <div>
-                        <small>PLAYER</small>
-                        <h3>PLAYER 1</h3>
-                    </div>
-                </div>
-
-                <div class="hp-label">
-                    <span>HP</span>
-                    <strong id="p1Hp">3</strong>
-                </div>
-
-                <div class="hp-bar">
-                    <div id="p1HpBar" class="hp-fill cyan-fill"></div>
-                </div>
-
-                <div class="pen-score">
-                    SCORE <strong id="penScore1">0</strong>
+                    <strong id="dotsP2">0</strong>
                 </div>
 
             </div>
 
+            <div id="dotsBoard"></div>
 
-            <div class="pen-vs">
-                <span>VS</span>
-            </div>
+            <p id="dotsMessage">
+                Connect two adjacent dots
+            </p>
 
-
-            <div class="pen-player-card player-two-card">
-
-                <div class="player-card-top">
-
-                    <div>
-                        <small id="penOpponentLabel">PLAYER</small>
-                        <h3 id="penOpponentName">PLAYER 2</h3>
-                    </div>
-
-                    <span class="player-number">02</span>
-                </div>
-
-                <div class="hp-label">
-                    <span>HP</span>
-                    <strong id="p2Hp">3</strong>
-                </div>
-
-                <div class="hp-bar">
-                    <div id="p2HpBar" class="hp-fill pink-fill"></div>
-                </div>
-
-                <div class="pen-score">
-                    SCORE <strong id="penScore2">0</strong>
-                </div>
-
-            </div>
+            <button onclick="resetDots()">Restart</button>
 
         </div>
 
+    </section>
 
-        <!-- ARENA -->
-        <section class="pen-arena-panel">
-
-            <div class="pen-arena-header">
-
-                <div class="arena-label">
-                    <span class="status-dot"></span>
-                    PEN ARENA
-                </div>
-
-                <div id="penArenaStatus" class="arena-status">
-                    PLAYER 1 TURN
-                </div>
-
-            </div>
-
-
-            <div class="pen-table-wrap">
-
-                <canvas id="penCanvas"></canvas>
-
-                <div class="hole-label hole-left-label">
-                    OUT
-                </div>
-
-                <div class="hole-label hole-right-label">
-                    OUT
-                </div>
-
-            </div>
-
-
-            <!-- POWER -->
-            <div class="pen-power-area">
-
-                <div class="power-label">
-                    <span>POWER</span>
-                    <strong id="powerPercent">0%</strong>
-                </div>
-
-                <div class="power-track">
-                    <div id="powerFill"></div>
-                </div>
-
-            </div>
-
-
-            <div class="pen-controls">
-
-                <div class="control-tip">
-                    <span class="control-icon">↕</span>
-                    <div>
-                        <strong>DRAG</strong>
-                        <small>Pull your pen back</small>
-                    </div>
-                </div>
-
-                <div class="control-tip">
-                    <span class="control-icon">➤</span>
-                    <div>
-                        <strong>RELEASE</strong>
-                        <small>Launch your pen</small>
-                    </div>
-                </div>
-
-                <div class="control-tip">
-                    <span class="control-icon">◎</span>
-                    <div>
-                        <strong>GOAL</strong>
-                        <small>Push opponent into OUT</small>
-                    </div>
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <button class="pen-restart-btn" onclick="restartPen()">
-            RESTART MATCH
-        </button>
-
-    </main>
-</section>
-
-
-<!-- ================= PEN RESULT ================= -->
-
-<div id="penResultOverlay" class="game-overlay pen-result-overlay">
-
-    <div class="result-modal pen-result-box">
-
-        <div class="result-glow"></div>
-
-        <div class="pen-result-icon" id="penResultIcon">
-            ✦
-        </div>
-
-        <span class="result-small">MATCH COMPLETE</span>
-
-        <h1 id="penResultTitle">PLAYER 1 WINS</h1>
-
-        <p id="penResultDescription">
-            Your opponent fell into the hole.
-        </p>
-
-        <div class="pen-final-score">
-
-            <div>
-                <small>PLAYER 1</small>
-                <strong id="penFinal1">0</strong>
-            </div>
-
-            <span>:</span>
-
-            <div>
-                <small id="penFinalTwoName">PLAYER 2</small>
-                <strong id="penFinal2">0</strong>
-            </div>
-
-        </div>
-
-        <div class="result-buttons">
-
-            <button class="pen-primary-btn" onclick="restartPen()">
-                PLAY AGAIN
-            </button>
-
-            <button class="pen-secondary-btn" onclick="goHome()">
-                HOME
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
-
+</main>
 
 <script src="script.js"></script>
+
 </body>
 </html>
